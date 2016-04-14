@@ -1,86 +1,53 @@
-Cozy Dockerfile
-===============
+Cozy Dev Dockerfile
+===================
 
-This is the Dockerfile recipe used to build the official Cozy image.
-It is built on top of the Ubuntu 14.04 image.
-
-## Installation
-
-* Install [Docker](https://www.docker.com/). This recipe has been tested on **Docker v1.0.1 and newer**.
-* Fetch the Cozy image:
-```
-sudo docker pull cozy/full
-```
-
-* OR you can build the container manually by running:
-```bash
-sudo docker build -t cozy/full github.com/cozy-labs/cozy-docker
-```
-
-## Usage
-
-```
-sudo docker run -d -p 80:80 -p 443:443 cozy/full
-```
-
-Where `-d` tells Docker to daemonize the process and `-p` to bind ports to the host.
-
-Then, you can open https://localhost/ in your browser to start using your new
-dockerized cozy instance.
-
-
-## Usage as a development environment
-
-You can also use the same Docker image as a development environment. To do so, just add `-e NODE_ENV=development` and `-e DISABLE_SSL=true`:
-
-```
-sudo docker run -e NODE_ENV=development -e DISABLE_SSL=true -d -p 80:80 cozy/full
-```
-
-
-## Hack
-
-In order to modify or patch this recipe you have to clone the repository:
-```bash
-git clone https://github.com/cozy-labs/cozy-docker
-cd cozy-docker
-```
-
-Modify the Dockerfile and/or the configuration files then build the container:
-```bash
-sudo docker build -t cozy/full .
-```
-
-That's all!
-
+This is an unofficial dev dockerfile for CozyCloud.
 
 ## Security
 
-It is highly recommended to build the image locally if you want to run Cozy in a production environment:
-```
-sudo docker build -t cozy github.com/cozy-labs/cozy-docker
-```
+DON'T USE IN PRODUCTION.
 
-This way, the security tokens will be reset, and the SSL certificate will be renewed.
+DON'T FORGET TO CLOSE THE CONTAINER.
 
+KNOW WHAT YOU'RE DOING.
 
+## Install steps
 
-## What is Cozy?
+These steps are meant to be run only once.
 
-![Cozy Logo](https://raw.github.com/mycozycloud/cozy-setup/gh-pages/assets/images/happycloud.png)
+* Install [Docker](https://www.docker.com/). This recipe has been tested on **Docker v1.11**.
+* Build the image:
 
-[Cozy](http://cozy.io) is a platform that brings all your web services in the
-same private space.  With it, your web apps and your devices can share data
-easily, providing you
-with a new experience. You can install Cozy on your own hardware where no one
-profiles you.
+`./build.sh`
 
+* Go grab yourself a coffee.
+* Make sure to have at least one RSA public key in your `~/.ssh` called
+  `id_rsa.pub`. This key will be copied into the container to be able to SSH
+  without password into it. (If some haters come around and say "hell no, this
+  is not the docker way", please go to the pull requests tab of this repo and
+  submit a better solution :-))
+* Run a container, once the image is ready to use:
 
-## Community
+`./start.sh`
 
-You can reach the Cozy Community by:
+## Run steps
 
-* Chatting with us on IRC #cozycloud on irc.freenode.net
-* Posting on our [Forum](https://forum.cozy.io)
-* Posting issues on the [Github repos](https://github.com/mycozycloud/)
-* Mentioning us on [Twitter](http://twitter.com/mycozycloud)
+These steps are needed every time you want to use the image in development:
+
+* Make sure the same container is running (using `docker restart $ID_CONTAINER`
+  -- the id can be found thanks to `docker ps -a`).
+* Create the port forwarding between the host and the container, thanks to
+  `index.js`. If your app is going to run on port 1337, use this command:
+
+  ```./index.js /path/to/my/app/package.json 1337```
+
+* In another terminal, start your app on the same port:
+
+  ```cd /path/to/my/app && PORT=1337 npm start```
+
+* Then, you can access the following web ui:
+
+    * the cozy ui at `https://localhost:8000`
+    * mailcatcher at `http://localhost:8001`
+
+* Once you're done with coding, hit `Ctrl+C` in both terminals.

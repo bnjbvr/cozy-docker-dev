@@ -2,3 +2,6 @@
 cozy-couchdb/
 cozy-etc/
 cozy-local/
+node_modules/
+dotssh/authorized_keys
+dotssh/known_hosts

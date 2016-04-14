@@ -1,0 +1,23 @@
+{
+  "name": "cozy-docker-dev",
+  "version": "1.0.0",
+  "description": "Dockerfile and helpers for running cozy developement edition within a Docker container.",
+  "main": "index.js",
+  "dependencies": {
+    "request-json": "0.5.5"
+  },
+  "devDependencies": {},
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/bnjbvr/cozy-docker-dev.git"
+  },
+  "author": "Benjamin Bouvier <public@benj.me>",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/bnjbvr/cozy-docker-dev/issues"
+  },
+  "homepage": "https://github.com/bnjbvr/cozy-docker-dev#readme"
+}

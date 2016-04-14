@@ -2,6 +2,8 @@
 
 set -e
 
+export NODE_ENV="development"
+
 # Remove old CouchDB admin
 if [ "$(tail -n1 /etc/couchdb/local.ini | awk '{ print $1 }')" != ";admin" ]; then
     sed -i '$ d' /etc/couchdb/local.ini

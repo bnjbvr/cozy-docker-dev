@@ -1,12 +1,14 @@
-FROM ubuntu:14.04
+FROM ubuntu:15.04
 
 ENV DEBIAN_FRONTEND noninteractive
 
 # Install Cozy tools and dependencies.
-RUN echo "deb http://ppa.launchpad.net/nginx/stable/ubuntu trusty main" >> /etc/apt/sources.list \
+RUN echo "deb http://ppa.launchpad.net/nginx/stable/ubuntu vivid main" >> /etc/apt/sources.list \
  && apt-key adv --keyserver keyserver.ubuntu.com --recv-keys C300EE8C \
  && apt-get update --quiet \
- && apt-get install --quiet --yes \
+ && apt-get dist-upgrade --yes
+
+ RUN apt-get install --quiet --yes \
   build-essential \
   couchdb \
   curl \
@@ -21,7 +23,7 @@ RUN echo "deb http://ppa.launchpad.net/nginx/stable/ubuntu trusty main" >> /etc/
   libjpeg-dev \
   lsof \
   nginx \
-  postfix \
+  openssh-server \
   pwgen \
   python-dev \
   python-pip \
@@ -29,11 +31,11 @@ RUN echo "deb http://ppa.launchpad.net/nginx/stable/ubuntu trusty main" >> /etc/
   python-software-properties \
   software-properties-common \
   sqlite3 \
+  sudo \
   wget
+
 RUN update-locale LANG=en_US.UTF-8
-RUN pip install \
-  supervisor \
-  virtualenv
+RUN pip install supervisor virtualenv
 
 # Install NodeJS 4.2.X LTS
 RUN curl -sL https://deb.nodesource.com/setup_4.x | bash -
@@ -48,21 +50,19 @@ RUN npm install -g \
 # Create Cozy users, without home directories.
 RUN useradd -M cozy \
  && useradd -M cozy-data-system \
- && useradd -M cozy-home
-
-# Configure CouchDB.
-RUN mkdir /etc/cozy \
+ && useradd -M cozy-home \
+ && mkdir /etc/cozy \
  && chown -hR cozy /etc/cozy
-RUN pwgen -1 > /etc/cozy/couchdb.login \
- && pwgen -1 >> /etc/cozy/couchdb.login \
- && chown cozy-data-system /etc/cozy/couchdb.login \
- && chmod 640 /etc/cozy/couchdb.login
+
+# Remove couchdb admin login, if existing.
+RUN if [ "$(tail -n1 /etc/couchdb/local.ini | awk '{ print $1 }')" != ";admin" ]; then sed -i '$ d' /etc/couchdb/local.ini;	fi
+
+# Configure CouchDB
 RUN mkdir /var/run/couchdb \
  && chown -hR couchdb /var/run/couchdb \
  && su - couchdb -c 'couchdb -b' \
- && sleep 5 \
- && while ! curl -s 127.0.0.1:5984; do sleep 5; done \
- && curl -s -X PUT 127.0.0.1:5984/_config/admins/$(head -n1 /etc/cozy/couchdb.login) -d "\"$(tail -n1 /etc/cozy/couchdb.login)\""
+ && sleep 2 \
+ && while ! curl -s 127.0.0.1:5984; do sleep 1; done
 
 # Configure Supervisor.
 ADD supervisor/supervisord.conf /etc/supervisord.conf
@@ -71,19 +71,16 @@ RUN mkdir -p /var/log/supervisor \
  && /usr/local/bin/supervisord -c /etc/supervisord.conf
 
 # Start up background services and install the Cozy platform apps.
-ENV NODE_ENV production
+ENV NODE_ENV development
+
 RUN su - couchdb -c 'couchdb -b' \
- && sleep 5 \
- && while ! curl -s 127.0.0.1:5984; do sleep 5; done \
- && cozy-controller & sleep 5 \
- && while ! curl -s 127.0.0.1:9002; do sleep 5; done \
+ && sleep 2 \
+ && while ! curl -s 127.0.0.1:5984; do sleep 1; done \
+ && cozy-controller & sleep 2 \
+ && while ! curl -s 127.0.0.1:9002; do sleep 1; done \
  && cozy-monitor install data-system \
  && cozy-monitor install home \
- && cozy-monitor install proxy \
- && curl -X POST http://localhost:9103/api/instance -H "Content-Type: application/json" -d '{"background":"background-07"}' \
- && for app in calendar contacts photos emails files sync; do \
-   cozy-monitor install $app; \
- done
+ && cozy-monitor install proxy
 
 # Configure Nginx and check its configuration by restarting the service.
 ADD nginx/nginx.conf /etc/nginx/nginx.conf
@@ -94,21 +91,29 @@ RUN chmod 0644 /etc/nginx/sites-available/cozy /etc/nginx/sites-available/cozy-s
  && ln -s /etc/nginx/sites-available/cozy /etc/nginx/sites-enabled/cozy
 RUN nginx -t
 
-# Configure Postfix with default parameters.
-# TODO: Change mydomain.net?
-RUN echo "postfix postfix/mailname string mydomain.net" | debconf-set-selections \
- && echo "postfix postfix/main_mailer_type select Internet Site" | debconf-set-selections \
- && echo "postfix postfix/destinations string mydomain.net, localhost.localdomain, localhost " | debconf-set-selections \
- && cp /etc/services /var/spool/postfix/etc/ \
- && cp /etc/resolv.conf /var/spool/postfix/etc \
- && postfix check
+# Install mailcatcher
+RUN apt-get install -y build-essential software-properties-common libsqlite3-dev ruby-dev
+RUN gem update --system
+RUN gem install mailcatcher
+
+# Configure SSH
+RUN mkdir /var/run/sshd
+
+RUN mkdir /root/.ssh && \
+    chmod 700 /root/.ssh && \
+    chown root:root /root/.ssh
+
+# -> Disallow logging in to SSH with a password.
+RUN sed -i "s/^.PasswordAuthentication yes/PasswordAuthentication no/" /etc/ssh/sshd_config \
+ && sed -i "s/^.ChallengeResponseAuthentication yes/ChallengeResponseAuthentication no/" /etc/ssh/sshd_config
 
 # Import Supervisor configuration files.
 ADD supervisor/cozy-controller.conf /etc/supervisor/conf.d/cozy-controller.conf
 ADD supervisor/cozy-init.conf /etc/supervisor/conf.d/cozy-init.conf
 ADD supervisor/couchdb.conf /etc/supervisor/conf.d/couchdb.conf
 ADD supervisor/nginx.conf /etc/supervisor/conf.d/nginx.conf
-ADD supervisor/postfix.conf /etc/supervisor/conf.d/postfix.conf
+ADD supervisor/sshd.conf /etc/supervisor/conf.d/sshd.conf
+ADD supervisor/mailcatcher.conf /etc/supervisor/conf.d/mailcatcher.conf
 ADD cozy-init /etc/init.d/cozy-init
 RUN chmod 0644 /etc/supervisor/conf.d/*
 
@@ -116,8 +121,14 @@ RUN chmod 0644 /etc/supervisor/conf.d/*
 RUN apt-get clean \
  && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
-EXPOSE 80 443
+# 80/443: web ui
+# 5984: couchdb
+# 9002: cozy-controller
+# 9101: cozy-data-system
+# 9104: cozy-proxy
+# 8001: mailcatcher web ui
+EXPOSE 80 443 5984 9002 9101 9104 8001
 
-VOLUME ["/var/lib/couchdb", "/etc/cozy", "/usr/local/cozy"]
+VOLUME ["/var/lib/couchdb", "/etc/cozy", "/usr/local/cozy", "/root/.ssh"]
 
 CMD [ "/usr/local/bin/supervisord", "-n", "-c", "/etc/supervisord.conf" ]
