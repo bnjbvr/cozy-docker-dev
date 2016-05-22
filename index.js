@@ -81,7 +81,7 @@ function addPortForwarding(port, cb) {
 var argv = process.argv;
 var argc = argv.length; // lol
 if (argc < 4) {
-    console.log('usage:', argv[1], ' path/to/package.json port');
+    console.log('usage:', argv[1], 'path/to/package.json port');
     process.exit();
 }
 

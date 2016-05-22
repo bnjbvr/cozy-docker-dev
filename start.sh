@@ -1,3 +1,3 @@
 #!/bin/bash
 
-node ./index.js
+docker start cozy-dev

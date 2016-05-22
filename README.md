@@ -9,6 +9,8 @@ DON'T USE IN PRODUCTION.
 
 DON'T FORGET TO CLOSE THE CONTAINER.
 
+READ ALL THE STEPS BEFORE YOU START.
+
 KNOW WHAT YOU'RE DOING.
 
 ## Install steps
@@ -21,6 +23,11 @@ These steps are meant to be run only once.
 `./build.sh`
 
 * Go grab yourself a coffee.
+    * Note that errors like `Cannot uninstall an application not installed`
+      should actually be warnings and don't matter too much at this point.
+    * That being said, the installation of mailcatcher may need some retries,
+      so if you see an error saying that `rubygems` can't be found, just
+      relaunch `./build.sh` until it works.
 * Make sure to have at least one RSA public key in your `~/.ssh` called
   `id_rsa.pub`. This key will be copied into the container to be able to SSH
   without password into it. (If some haters come around and say "hell no, this
@@ -28,14 +35,23 @@ These steps are meant to be run only once.
   submit a better solution :-))
 * Run a container, once the image is ready to use:
 
-`./start.sh`
+`./spawn.sh`
+
+Note that it can take up to 2 minutes (on my local machine) before I can reach
+the home page, because the init script may take some time to set up the Cozy
+stack.
+
+Also, because the certificates generated are self-signed, you **will** get a
+warning from your web browser when going to your development environment. If
+you don't get a warning, say farewell to bad choices in your life and consider
+downloading a [better browser](https://www.mozilla.org/en-US/firefox/new/).
 
 ## Run steps
 
 These steps are needed every time you want to use the image in development:
 
-* Make sure the same container is running (using `docker restart $ID_CONTAINER`
-  -- the id can be found thanks to `docker ps -a`).
+* Restart the container with `./start.sh` or by hand: the container is named
+  `cozy-dev` by default (see in `spawn.sh`).
 * Create the port forwarding between the host and the container, thanks to
   `index.js`. If your app is going to run on port 1337, use this command:
 

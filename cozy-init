@@ -51,3 +51,5 @@ while ! curl -s 127.0.0.1:5984; do sleep 5; done
 cozy-monitor restart-cozy-stack
 
 rm -f /etc/supervisor/conf.d/cozy-init.conf
+
+chown -R root:root /root/.ssh
