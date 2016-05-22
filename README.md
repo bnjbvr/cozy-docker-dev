@@ -18,9 +18,13 @@ KNOW WHAT YOU'RE DOING.
 These steps are meant to be run only once.
 
 * Install [Docker](https://www.docker.com/). This recipe has been tested on **Docker v1.11**.
+* Install node dependencies:
+
+  `npm i`
+
 * Build the image:
 
-`./build.sh`
+  `./build.sh`
 
 * Go grab yourself a coffee.
     * Note that errors like `Cannot uninstall an application not installed`
@@ -30,12 +34,12 @@ These steps are meant to be run only once.
       relaunch `./build.sh` until it works.
 * Make sure to have at least one RSA public key in your `~/.ssh` called
   `id_rsa.pub`. This key will be copied into the container to be able to SSH
-  without password into it. (If some haters come around and say "hell no, this
-  is not the docker way", please go to the pull requests tab of this repo and
-  submit a better solution :-))
+  into it without a password. (If some haters come around and say "hell no,
+  this is not the docker way", please go to the pull requests tab of this repo
+  and submit a better solution :-))
 * Run a container, once the image is ready to use:
 
-`./spawn.sh`
+  `./spawn.sh`
 
 Note that it can take up to 2 minutes (on my local machine) before I can reach
 the home page, because the init script may take some time to set up the Cozy
@@ -67,3 +71,11 @@ These steps are needed every time you want to use the image in development:
     * mailcatcher at `http://localhost:8001`
 
 * Once you're done with coding, hit `Ctrl+C` in both terminals.
+
+## Addendum: How this works
+
+Docker runs most of the software and ports are bound so that they're reachable
+from the host. So far, so good. The tricky part is being able to run apps on
+the host while they appear from within the docker. The hack used here is to
+use SSH port tunnelling between the container and the host. That's what the JS
+tool `index` is used for.
