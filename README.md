@@ -79,3 +79,12 @@ from the host. So far, so good. The tricky part is being able to run apps on
 the host while they appear from within the docker. The hack used here is to
 use SSH port tunnelling between the container and the host. That's what the JS
 tool `index` is used for.
+
+
+## Troubleshooting
+
+**`sync.sh` hangs when trying to download packages.**
+
+By default, Ubuntu will try to use IPv6 to fetch the packages it needs. If IPv6 is not available on your network, you can force the use of IPv4 by adding the following line [at the beginning of your Dockerfile](https://github.com/bnjbvr/cozy-docker-dev/blob/master/Dockerfile#L5):
+
+  ```RUN echo 'Acquire::ForceIPv4 "true";' | tee /etc/apt/apt.conf.d/99force-ipv4```
