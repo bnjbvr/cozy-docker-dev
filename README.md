@@ -83,7 +83,7 @@ tool `index` is used for.
 
 ## Troubleshooting
 
-**`sync.sh` hangs when trying to download packages.**
+**`build.sh` hangs when trying to download packages.**
 
 By default, Ubuntu will try to use IPv6 to fetch the packages it needs. If IPv6 is not available on your network, you can force the use of IPv4 by adding the following line [at the beginning of your Dockerfile](https://github.com/bnjbvr/cozy-docker-dev/blob/master/Dockerfile#L5):
 
